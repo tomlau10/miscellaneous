@@ -31,6 +31,7 @@ esac
 
 url=
 output=
+force=0
 curl_opts=()
 
 __ScriptVersion="v0.1.1"
@@ -48,6 +49,7 @@ function usage ()
     -v|version    Display script version
     -s|slice      How many slices the download task will split, default is $slices
     -o|output     Specify the output file name, use the guessing file name from url as output file name if not specify this option
+    -f|force      Force overwirte output file if exists
 
     Anything after 'url' will be passed to curl as curl options"
 
@@ -57,13 +59,14 @@ function usage ()
 #  Handle command line arguments
 #-----------------------------------------------------------------------
 
-while getopts ":hv:s:o:" opt
+while getopts ":hv:s:o:f" opt
 do
     case $opt in
 	h|help     )  usage; exit 0   ;;
 	v|version  )  echo "Multi tasks downloader for curl, version $__ScriptVersion"; exit 0   ;;
 	s|slice    )  slices=$OPTARG ;;
 	o|output   )  output=$OPTARG ;;
+	f|force    )  force=1 ;;
 	* )  echo -e "\n  Option does not exist : $OPTARG\n"
 	    usage; exit 1   ;;
     esac    # --- end of case ---
@@ -98,6 +101,18 @@ size_in_byte=$(curl "${curl_opts[@]}" -I "$url" 2>/dev/null | sed -n 's/\([Cc]on
 if ! [[ $size_in_byte =~ ^[0-9]+$ ]];then
     printf "\e[31mCould not get content length, make sure your resource have content length response.\e[0m\n"
     exit 1
+fi
+
+# check if target file exist
+if [ -f "$file_to_save" ]; then
+	if (( $force )); then
+		rm -f "$file_to_save" || exit 1
+	else
+		# prompt to delete file
+		echo "Target file already exists!"
+		rm -i "$file_to_save" || exit 1
+		[ -f "$file_to_save" ] && echo "Cancelled" && exit
+	fi
 fi
 
 # remove temp files and kill all sub processes if exit early
