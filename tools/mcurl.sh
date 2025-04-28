@@ -171,9 +171,9 @@ done
 while :
 do
 	if [ -f $$.1 ];then
-		total_kb=$(BLOCKSIZE=1024 du -k $$.* | awk '{t+=$1}END{printf "%d", t}')
+		total_byte=$(wc -c $$.* | awk 'END{print $1}')
 		duration=$((`date +%s`-$start_time))
-		[ $duration -gt 0 ] && printf "\r\e[KProgress %3d%%; Current average speed %4d KiB/s" $(($total_kb*1024*100/$size_in_byte)) $(($total_kb/$duration))
+		[ $duration -gt 0 ] && printf "\r\e[KProgress %3d%%; Current average speed %4d KiB/s" $(($total_byte*100/$size_in_byte)) $(($total_byte/1024/$duration))
 	fi
 	sleep 1
 done
