@@ -131,8 +131,8 @@ let size_per_slice=${size_per_slice}+1  # avoid rounding issue
 total_slice=${slices}
 function callback()
 {
-	subp=$(pgrep -P $$ | wc -l)
-	if [  $subp -eq 1 ];then
+	running_pids=$(jobs -rp)
+	if [ -z "$running_pids" ];then
 		printf "\rProgress 100%%\n"
 		mv $$.1 "${file_to_save}"
 		if [ $total_slice -gt 1 ]; then
