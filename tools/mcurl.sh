@@ -100,6 +100,16 @@ if ! [[ $size_in_byte =~ ^[0-9]+$ ]];then
     exit 1
 fi
 
+# remove temp files and kill all sub processes if exit early
+function exit_cleanup()
+{
+	rm -rf $$.*
+	# remove SIGTERM handler then kill the whole process group
+	trap - SIGTERM
+	kill -s SIGTERM -- -$$
+}
+trap exit_cleanup SIGINT SIGTERM SIGQUIT
+
 size_per_slice=$(($size_in_byte/$slices))
 let size_per_slice=${size_per_slice}+1  # avoid rounding issue
 
