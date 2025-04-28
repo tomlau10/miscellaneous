@@ -31,6 +31,7 @@ esac
 
 url=
 output=
+curl_opts=()
 
 __ScriptVersion="v0.1.1"
 
@@ -40,13 +41,15 @@ __ScriptVersion="v0.1.1"
 #===============================================================================
 function usage ()
 {
-    echo "Usage :  $0 [options] url
+    echo "Usage :  $0 [options] url [curl options]
 
     Options:
     -h|help       Display this message
     -v|version    Display script version
     -s|slice      How many slices the download task will split, default is $slices
-    -o|output     Specify the output file name, use the guessing file name from url as output file name if not specify this option"
+    -o|output     Specify the output file name, use the guessing file name from url as output file name if not specify this option
+
+    Anything after 'url' will be passed to curl as curl options"
 
 }    # ----------  end of function usage  ----------
 
@@ -67,12 +70,20 @@ do
 done
 shift $(($OPTIND-1))
 
-url=${@: -1}
+url=$1
 
 if ! [[ $url =~ ^https?://.*$ ]];then
     printf "\e[31mInvalid URL $url\e[0m\n"
     usage
     exit 1
+fi
+
+# get curl options
+curl_opts=("${@:2}")
+if [ "${#curl_opts[@]}" -gt 0 ] && [[ "${curl_opts[0]}" != "-"* ]]; then
+	printf "\e[31mCurl options are expected after URL param\e[0m\n"
+	usage
+	exit 1
 fi
 
 url_no_query=${url%%\?*}
@@ -82,7 +93,7 @@ file_to_save=${url_no_query##*/}
 
 echo "Download $url to $file_to_save with $slices tasks."
 
-size_in_byte=$(curl -I "$url" 2>/dev/null | sed -n 's/\([Cc]ontent-[Ll]ength:\)\(.*\)/\2/p' | tr -d [[:space:]])
+size_in_byte=$(curl "${curl_opts[@]}" -I "$url" 2>/dev/null | sed -n 's/\([Cc]ontent-[Ll]ength:\)\(.*\)/\2/p' | tr -d [[:space:]])
 
 if ! [[ $size_in_byte =~ ^[0-9]+$ ]];then
     printf "\e[31mCould not get content length, make sure your resource have content length response.\e[0m\n"
@@ -110,7 +121,7 @@ function callback()
 
 function run()
 {
-	curl -r $2-$3 $url -o $1 2>/dev/null && kill -n 10 $$ &
+	curl "${curl_opts[@]}" -r $2-$3 $url -o $1 2>/dev/null && kill -n 10 $$ &
 }
 
 trap callback 10
