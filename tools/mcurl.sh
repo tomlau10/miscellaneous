@@ -129,7 +129,7 @@ size_per_slice=$(($size_in_byte/$slices))
 let size_per_slice=${size_per_slice}+1  # avoid rounding issue
 
 total_slice=${slices}
-function callback()
+function check_finish()
 {
 	running_pids=$(jobs -rp)
 	if [ -z "$running_pids" ];then
@@ -151,10 +151,8 @@ function callback()
 
 function run()
 {
-	curl "${curl_opts[@]}" -r $2-$3 $url -o $1 2>/dev/null && kill -n 10 $$ &
+	curl "${curl_opts[@]}" -r $2-$3 $url -o $1 2>/dev/null &
 }
-
-trap callback 10
 
 printf "\rProgress   0%%"
 start_time=$(date +%s)
@@ -178,5 +176,6 @@ do
 		duration=$((`date +%s`-$start_time))
 		[ $duration -gt 0 ] && printf "\r\e[KProgress %3d%%; Current average speed %4d KiB/s" $(($total_byte*100/$size_in_byte)) $(($total_byte/1024/$duration))
 	fi
+	check_finish
 	sleep 1
 done
