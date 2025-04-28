@@ -129,18 +129,20 @@ size_per_slice=$(($size_in_byte/$slices))
 let size_per_slice=${size_per_slice}+1  # avoid rounding issue
 
 total_slice=${slices}
-finished_slice=0
-is_finished=0
 function callback()
 {
 	subp=$(pgrep -P $$ | wc -l)
 	if [  $subp -eq 1 ];then
+		printf "\rProgress 100%%\n"
 		for s in `seq $total_slice`
 		do
+			printf "\rMerging slices [$s/$total_slice]"
 			cat $$.$s >> "${file_to_save}"
 			rm $$.$s
 		done
-		is_finished=1
+		echo
+		echo "Done in $((`date +%s`-$start_time))s"
+		exit
 	fi
 }
 
@@ -151,6 +153,7 @@ function run()
 
 trap callback 10
 
+printf "\rProgress   0%%"
 start_time=$(date +%s)
 for s in `seq $total_slice`
 do
@@ -165,14 +168,12 @@ do
 	run $$.$s $begin $end
 done
 
-until [ $is_finished -eq 1 ]
+while :
 do
 	if [ -f $$.1 ];then
 		total_kb=$(BLOCKSIZE=1024 du -k $$.* | awk '{t+=$1}END{printf "%d", t}')
 		duration=$((`date +%s`-$start_time))
-		[ $duration -gt 0 ] && printf "\rCurrent average speed %4d KiB/s" $(($total_kb/$duration))
+		[ $duration -gt 0 ] && printf "\r\e[KProgress %3d%%; Current average speed %4d KiB/s" $(($total_kb*1024*100/$size_in_byte)) $(($total_kb/$duration))
 	fi
 	sleep 1
 done
-
-echo
