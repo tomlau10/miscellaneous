@@ -134,13 +134,16 @@ function callback()
 	subp=$(pgrep -P $$ | wc -l)
 	if [  $subp -eq 1 ];then
 		printf "\rProgress 100%%\n"
-		for s in `seq $total_slice`
-		do
-			printf "\rMerging slices [$s/$total_slice]"
-			cat $$.$s >> "${file_to_save}"
-			rm $$.$s
-		done
-		echo
+		mv $$.1 "${file_to_save}"
+		if [ $total_slice -gt 1 ]; then
+			for s in `seq 2 $total_slice`
+			do
+				printf "\rMerging slices [$s/$total_slice]"
+				cat $$.$s >> "${file_to_save}"
+				rm $$.$s
+			done
+			echo
+		fi
 		echo "Done in $((`date +%s`-$start_time))s"
 		exit
 	fi
