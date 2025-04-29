@@ -19,6 +19,15 @@
 # Changelog
 # v0.1        initial version
 # v0.1.1      add output option
+# v0.2.0      feat: support passing curl options
+#             feat: clean up when script is interrupted
+#             feat: prompt to remove existing target file
+#             feat: show progress when downloading and merging
+#             feat: support gitbash by replacing `pgrep` with `jobs`
+#             feat: check if any errors for spawned tasks
+#             perf: use `mv` for 1st slice instead of `cat`
+#             perf: show speed stats as soon as any part file exists
+#             fix: race condition when downloading small files
 
 slices=20
 
@@ -34,7 +43,7 @@ output=
 force=0
 curl_opts=()
 
-__ScriptVersion="v0.1.1"
+__ScriptVersion="v0.2.0"
 
 #===  FUNCTION  ================================================================
 #         NAME:  usage
