@@ -129,10 +129,21 @@ size_per_slice=$(($size_in_byte/$slices))
 let size_per_slice=${size_per_slice}+1  # avoid rounding issue
 
 total_slice=${slices}
+spawned_pids=()
 function check_finish()
 {
-	running_pids=$(jobs -rp)
-	if [ -z "$running_pids" ];then
+	# read running pids into array
+	running_pids=( $(jobs -rp) )
+	[ "${#running_pids[@]}" -eq 0 ] && is_finished=1 || is_finished=0
+	for pid in ${spawned_pids[@]}; do
+		# if a spawned task is not running, then it is finished
+		# check if the finished task has error
+		if [[ " ${running_pids[@]} " != *" $pid "* ]] && ! wait $pid; then
+			printf "\nError occurred in 1 or more tasks!\n"
+			exit_cleanup
+		fi
+	done
+	if (( $is_finished )); then
 		printf "\rProgress 100%%\n"
 		mv $$.1 "${file_to_save}"
 		if [ $total_slice -gt 1 ]; then
@@ -152,6 +163,7 @@ function check_finish()
 function run()
 {
 	curl "${curl_opts[@]}" -r $2-$3 $url -o $1 2>/dev/null &
+	spawned_pids+=($!)
 }
 
 printf "\rProgress   0%%"
