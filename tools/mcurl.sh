@@ -187,8 +187,9 @@ done
 
 while :
 do
-	if [ -f $$.1 ];then
-		total_byte=$(wc -c $$.* | awk 'END{print $1}')
+	part_files=($$.*)
+	if [ -f "${part_files[0]}" ]; then
+		total_byte=$(wc -c "${part_files[@]}" | awk 'END{print $1}')
 		duration=$((`date +%s`-$start_time))
 		[ $duration -gt 0 ] && printf "\r\e[KProgress %3d%%; Current average speed %4d KiB/s" $(($total_byte*100/$size_in_byte)) $(($total_byte/1024/$duration))
 	fi
