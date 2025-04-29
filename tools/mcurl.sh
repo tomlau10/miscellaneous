@@ -118,10 +118,14 @@ fi
 # remove temp files and kill all sub processes if exit early
 function exit_cleanup()
 {
+	# ignore SIGTERM then kill the whole process group
+	# which should kill all child processes and close all writing files
+	trap "" SIGTERM
+	kill -s SIGTERM -- -$$ 2>/dev/null
+	# cleanup and exit
 	rm -rf $$.*
-	# remove SIGTERM handler then kill the whole process group
-	trap - SIGTERM
-	kill -s SIGTERM -- -$$
+	echo "Terminated"
+	exit 1
 }
 trap exit_cleanup SIGINT SIGTERM SIGQUIT
 
